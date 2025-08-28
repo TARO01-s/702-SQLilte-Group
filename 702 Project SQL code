@@ -1,0 +1,401 @@
+/* ===========================================================
+   Data Cleaning: Air Pollution
+   =========================================================== */
+
+CREATE TABLE AirPollution_clean AS
+-- Year 2018
+SELECT 
+    [Data Source] AS Country,
+    [World Development Indicators] AS Country_Code,
+    '2018' AS Year,
+    field63 AS Pollution
+FROM AirPollution
+WHERE field63 IS NOT NULL
+
+UNION ALL
+-- Year 2019
+SELECT 
+    [Data Source],
+    [World Development Indicators],
+    '2019',
+    field64
+FROM AirPollution
+WHERE field64 IS NOT NULL
+
+UNION ALL
+-- Year 2020
+SELECT 
+    [Data Source],
+    [World Development Indicators],
+    '2020',
+    field65
+FROM AirPollution
+WHERE field65 IS NOT NULL;
+
+-- Remove invalid rows
+DELETE FROM AirPollution_clean
+WHERE Pollution = '2018';
+
+-- Remove aggregated regions and non-country entries
+DELETE FROM AirPollution_clean
+WHERE Country LIKE 'World%'
+   OR Country LIKE 'Africa Eastern and Southern%'
+   OR Country LIKE 'Africa Western and Central%'
+   OR Country LIKE 'Central Europe and the Baltics%'
+   OR Country LIKE 'Country Name%'
+   OR Country LIKE 'Sub-Saharan%'
+   OR Country LIKE 'Europe & Central Asia%'
+   OR Country LIKE 'East Asia & Pacific%'
+   OR Country LIKE 'Euro area%'
+   OR Country LIKE 'European Union%'
+   OR Country LIKE 'Fragile and conflict affected situations%'
+   OR Country LIKE 'Heavily indebted poor countries%'
+   OR Country LIKE 'High income%'
+   OR Country LIKE 'IBRD only%'
+   OR Country LIKE 'EIDA%'
+   OR Country LIKE 'IDA%'
+   OR Country LIKE 'Late-demographic dividend%'
+   OR Country LIKE 'Latin America & Caribbean%'
+   OR Country LIKE 'Least developed countries%'
+   OR Country LIKE 'Low & middle income%'
+   OR Country LIKE 'Lower middle income%'
+   OR Country LIKE 'Middle East%'
+   OR Country LIKE 'OECD members%'
+   OR Country LIKE 'Other small states%'
+   OR Country LIKE 'Pacific island small states%'
+   OR Country LIKE 'Post-demographic dividend%'
+   OR Country LIKE 'Pre-demographic dividend%'
+   OR Country LIKE 'South Asia%'
+   OR Country IN (
+       'Arab World','Caribbean small states','Early-demographic dividend',
+       'IDA & IBRD total','IDA blend','Latin America & the Caribbean (IDA & IBRD countries)',
+       'Low income','Middle income','North America','Small states','Upper middle income'
+   );
+
+-- Standardize country names (part 1)
+UPDATE AirPollution_clean
+SET Country = CASE Country
+    WHEN 'Côte d''Ivoire'                   THEN 'Cote d''Ivoire'
+    WHEN 'Democratic Republic of the Congo' THEN 'Democratic Republic of Congo'
+    WHEN 'Republic of the Congo'            THEN 'Congo'
+    WHEN 'Brunei Darussalam'                THEN 'Brunei'
+    WHEN 'Cabo Verde'                       THEN 'Cape Verde'
+    WHEN 'Slovak Republic'                  THEN 'Slovakia'
+    WHEN 'Timor-Leste'                      THEN 'East Timor'
+    WHEN 'Micronesia'                       THEN 'Micronesia (country)'
+    WHEN 'Puerto Rico (US)'                 THEN 'Puerto Rico'
+    WHEN 'Virgin Islands (U.S.)'            THEN 'United States Virgin Islands'
+    WHEN 'West Bank and Gaza'               THEN 'Palestine'
+    ELSE Country
+END
+WHERE Country IN (
+    'Côte d''Ivoire','Democratic Republic of the Congo','Republic of the Congo',
+    'Brunei Darussalam','Cabo Verde','Slovak Republic','Timor-Leste','Micronesia',
+    'Puerto Rico (US)','Virgin Islands (U.S.)','West Bank and Gaza'
+);
+
+-- Standardize country names (part 2)
+UPDATE AirPollution_clean
+SET Country = CASE Country
+    WHEN 'Bahamas, The'                   THEN 'Bahamas'
+    WHEN 'Gambia, The'                    THEN 'Gambia'
+    WHEN 'Congo, Dem. Rep.'               THEN 'Democratic Republic of the Congo'
+    WHEN 'Congo, Rep.'                    THEN 'Republic of the Congo'
+    WHEN 'Egypt, Arab Rep.'               THEN 'Egypt'
+    WHEN 'Iran, Islamic Rep.'             THEN 'Iran'
+    WHEN 'Korea, Dem. People''s Rep.'     THEN 'North Korea'
+    WHEN 'Korea, Rep.'                    THEN 'South Korea'
+    WHEN 'Kyrgyz Republic'                THEN 'Kyrgyzstan'
+    WHEN 'Lao PDR'                        THEN 'Laos'
+    WHEN 'Micronesia, Fed. Sts.'          THEN 'Micronesia'
+    WHEN 'Russian Federation'             THEN 'Russia'
+    WHEN 'Syrian Arab Republic'           THEN 'Syria'
+    WHEN 'Turkiye'                        THEN 'Turkey'
+    WHEN 'Venezuela, RB'                  THEN 'Venezuela'
+    WHEN 'Viet Nam'                       THEN 'Vietnam'
+    WHEN 'Yemen, Rep.'                    THEN 'Yemen'
+    WHEN 'Cote d''Ivoire'                 THEN 'Côte d''Ivoire'
+    WHEN 'St. Kitts and Nevis'            THEN 'Saint Kitts and Nevis'
+    WHEN 'St. Lucia'                      THEN 'Saint Lucia'
+    WHEN 'St. Vincent and the Grenadines' THEN 'Saint Vincent and the Grenadines'
+    ELSE Country
+END
+WHERE Country IN (
+    'Bahamas, The','Gambia, The','Congo, Dem. Rep.','Congo, Rep.','Egypt, Arab Rep.',
+    'Iran, Islamic Rep.','Korea, Dem. People''s Rep.','Korea, Rep.','Kyrgyz Republic',
+    'Lao PDR','Micronesia, Fed. Sts.','Russian Federation','Syrian Arab Republic',
+    'Turkiye','Venezuela, RB','Viet Nam','Yemen, Rep.','Cote d''Ivoire',
+    'St. Kitts and Nevis','St. Lucia','St. Vincent and the Grenadines'
+);
+
+COMMIT;
+
+
+/* ===========================================================
+   Data Cleaning: Human Development Index (HDI)
+   =========================================================== */
+
+CREATE TABLE HDI_clean AS
+-- Year 2018
+SELECT 
+    Country,
+    '2018' AS Year,
+    [Human Development Index (2018)] AS HDI,
+    [Gross National Income Per Capita (2018)] AS GNI_percapital,
+    [Life Expectancy at Birth (2018)] AS LifeExp,
+    [Mean Years of Schooling (2018)] AS Schooling,
+    [HDI female (2018)] AS HDI_female,
+    [Gross National Income Per Capita, female (2018)] AS GNI_female,
+    [HDI male (2018)] AS HDI_male,
+    [Gross National Income Per Capita, male (2018)] AS GNI_male,
+    [Human Development Groups] AS HDI_Group,
+    [UNDP Developing Regions] AS Developing_Region
+FROM "Human Development Index - Full"
+
+UNION ALL
+-- Year 2019
+SELECT 
+    Country,
+    '2019',
+    [Human Development Index (2019)],
+    [Gross National Income Per Capita (2019)],
+    [Life Expectancy at Birth (2019)],
+    [Mean Years of Schooling (2019)],
+    [HDI female (2019)],
+    [Gross National Income Per Capita, female (2019)],
+    [HDI male (2019)],
+    [Gross National Income Per Capita, male (2019)],
+    [Human Development Groups],
+    [UNDP Developing Regions]
+FROM "Human Development Index - Full"
+
+UNION ALL
+-- Year 2020
+SELECT 
+    Country,
+    '2020',
+    [Human Development Index (2020)],
+    [Gross National Income Per Capita (2020)],
+    [Life Expectancy at Birth (2020)],
+    [Mean Years of Schooling (2020)],
+    [HDI female (2020)],
+    [Gross National Income Per Capita, female (2020)],
+    [HDI male (2020)],
+    [Gross National Income Per Capita, male (2020)],
+    [Human Development Groups],
+    [UNDP Developing Regions]
+FROM "Human Development Index - Full"
+
+UNION ALL
+-- Year 2021
+SELECT 
+    Country,
+    '2021',
+    [Human Development Index (2021)],
+    [Gross National Income Per Capita (2021)],
+    [Life Expectancy at Birth (2021)],
+    [Mean Years of Schooling (2021)],
+    [HDI female (2021)],
+    [Gross National Income Per Capita, female (2021)],
+    [HDI male (2021)],
+    [Gross National Income Per Capita, male (2021)],
+    [Human Development Groups],
+    [UNDP Developing Regions]
+FROM "Human Development Index - Full";
+
+-- Standardize country names
+UPDATE HDI_clean
+SET Country = CASE Country
+    WHEN 'Ivory Coast'                          THEN 'Cote d''Ivoire'
+    WHEN 'The Democratic Republic of the Congo' THEN 'Democratic Republic of Congo'
+    WHEN 'Congo, Rep.'                          THEN 'Congo'
+    WHEN 'Lao'                                  THEN 'Laos'
+    WHEN 'Korea, Rep.'                          THEN 'South Korea'
+    WHEN 'Korea, Dem. People''s Rep.'           THEN 'North Korea'
+    WHEN 'Palestine, State of'                  THEN 'Palestine'
+    WHEN 'Russian Federation'                   THEN 'Russia'
+    WHEN 'Syrian Arab Republic'                 THEN 'Syria'
+    WHEN 'Turkiye'                              THEN 'Turkey'
+    WHEN 'Viet Nam'                             THEN 'Vietnam'
+    ELSE Country
+END;
+
+
+/* ===========================================================
+   Data Cleaning: Covid-19 Deaths
+   =========================================================== */
+
+DROP TABLE IF EXISTS CovidDeaths_clean;
+
+CREATE TABLE CovidDeaths_clean AS
+SELECT 
+    Entity AS Country,
+    strftime('%Y', Day) AS Year,
+    MAX([Cumulative excess deaths per 100,000 people (central estimate)]) AS ExcessDeaths_CentralEstmate,
+    MAX([Cumulative excess deaths per 100,000 people (95% CI, lower bound)]) AS ExcessDeaths_Lower,
+    MAX([Cumulative excess deaths per 100,000 people (95% CI, upper bound)]) AS ExcessDeaths_Upper,
+    MAX([Total confirmed deaths due to COVID-19 per 100,000 people]) AS ConfirmedDeaths
+FROM CovidDeaths
+GROUP BY Entity, strftime('%Y', Day);
+
+-- Remove non-country aggregates
+DELETE FROM CovidDeaths_clean
+WHERE Country LIKE 'World%'
+   OR Country LIKE 'Asia%'
+   OR Country LIKE 'High-income%'
+   OR Country LIKE 'Low-income%'
+   OR Country LIKE 'Lower-middle%'
+   OR Country LIKE 'Upper-middle%'
+   OR Country LIKE 'Oceania%'
+   OR Country LIKE 'North America%'
+   OR Country IN ('Africa','Europe','South America');
+
+-- Final checks
+SELECT DISTINCT Country FROM AirPollution_clean ORDER BY Country;
+SELECT DISTINCT Country FROM HDI_clean ORDER BY Country;
+SELECT DISTINCT Country FROM CovidDeaths_clean ORDER BY Country;
+
+
+/* ===========================================================
+   RQ1: COVID vs. ΔHDI (2019→2020)
+   =========================================================== */
+
+CREATE VIEW Covid_HDI_Base AS
+WITH hdi_2019 AS (
+  SELECT TRIM(Country) AS Country,
+         CAST(HDI AS REAL) AS HDI_2019,
+         HDI_Group AS HDI_Group_2019
+  FROM HDI_clean
+  WHERE Year = '2019'
+),
+hdi_2020 AS (
+  SELECT TRIM(Country) AS Country,
+         CAST(HDI AS REAL) AS HDI_2020
+  FROM HDI_clean
+  WHERE Year = '2020'
+),
+covid_2020 AS (
+  SELECT TRIM(Country) AS Country,
+         CAST(ExcessDeaths_CentralEstmate AS REAL) AS CovidDeaths_2020_cum
+  FROM CovidDeaths_clean
+  WHERE Year = '2020'
+)
+SELECT
+  b.Country,
+  b.HDI_Group_2019 AS HDI_Group,
+  b.HDI_2019,
+  a.HDI_2020,
+  (a.HDI_2020 - b.HDI_2019) AS Delta_HDI_2020,
+  c.CovidDeaths_2020_cum
+FROM hdi_2019 b
+JOIN hdi_2020 a ON a.Country = b.Country
+JOIN covid_2020 c ON c.Country = b.Country
+WHERE a.HDI_2020 IS NOT NULL
+  AND b.HDI_2019 IS NOT NULL
+  AND c.CovidDeaths_2020_cum IS NOT NULL;
+
+-- Details
+SELECT * 
+FROM Covid_HDI_Base
+ORDER BY HDI_Group, Country;
+
+-- Group means
+SELECT 
+  HDI_Group,
+  COUNT(*) AS n_countries,
+  ROUND(AVG(CovidDeaths_2020_cum),2) AS avg_covid,
+  ROUND(AVG(Delta_HDI_2020),4) AS avg_delta_hdi
+FROM Covid_HDI_Base
+GROUP BY HDI_Group
+ORDER BY HDI_Group;
+
+-- Pearson correlation (overall)
+WITH agg AS (
+  SELECT
+    COUNT(*) AS n,
+    SUM(CovidDeaths_2020_cum) AS sum_x,
+    SUM(Delta_HDI_2020) AS sum_y,
+    SUM(CovidDeaths_2020_cum * Delta_HDI_2020) AS sum_xy,
+    SUM(CovidDeaths_2020_cum * CovidDeaths_2020_cum) AS sum_x2,
+    SUM(Delta_HDI_2020 * Delta_HDI_2020) AS sum_y2
+  FROM Covid_HDI_Base
+)
+SELECT
+  ROUND((n*sum_xy - sum_x*sum_y) / (SQRT(n*sum_x2 - sum_x*sum_x) * SQRT(n*sum_y2 - sum_y*sum_y)),4) AS pearson_r_overall
+FROM agg;
+
+-- Pearson correlation (by HDI group)
+WITH agg AS (
+  SELECT
+    HDI_Group,
+    COUNT(*) AS n,
+    SUM(CovidDeaths_2020_cum) AS sum_x,
+    SUM(Delta_HDI_2020) AS sum_y,
+    SUM(CovidDeaths_2020_cum * Delta_HDI_2020) AS sum_xy,
+    SUM(CovidDeaths_2020_cum * CovidDeaths_2020_cum) AS sum_x2,
+    SUM(Delta_HDI_2020 * Delta_HDI_2020) AS sum_y2
+  FROM Covid_HDI_Base
+  GROUP BY HDI_Group
+)
+SELECT
+  HDI_Group,
+  ROUND((n*sum_xy - sum_x*sum_y) / (SQRT(n*sum_x2 - sum_x*sum_x) * SQRT(n*sum_y2 - sum_y*sum_y)),4) AS pearson_r_by_group
+FROM agg
+ORDER BY pearson_r_by_group DESC;
+
+
+/* ===========================================================
+   RQ2 + RQ3: COVID vs. Pollution & Life Expectancy
+   =========================================================== */
+
+SELECT 
+    ap2019.Country,
+    h2019.HDI_Group,
+    ap2019.Pollution AS Pollution_2019,
+    ap2020.Pollution AS Pollution_2020,
+    (ap2020.Pollution - ap2019.Pollution) AS PollutionDrop,
+    cd2020.ExcessDeaths_CentralEstmate AS CovidDeaths_2020,
+    h2019.LifeExp AS LifeExp_2019,
+    h2020.LifeExp AS LifeExp_2020
+FROM AirPollution_clean ap2019
+JOIN AirPollution_clean ap2020
+    ON ap2019.Country = ap2020.Country
+   AND ap2019.Year = '2019'
+   AND ap2020.Year = '2020'
+JOIN CovidDeaths_clean cd2020
+    ON ap2019.Country = cd2020.Country
+   AND cd2020.Year = '2020'
+JOIN HDI_clean h2019
+    ON ap2019.Country = h2019.Country
+   AND h2019.Year = '2019'
+JOIN HDI_clean h2020
+    ON ap2019.Country = h2020.Country
+   AND h2020.Year = '2020'
+ORDER BY CovidDeaths_2020 DESC;
+
+
+/* ===========================================================
+   RQ4: Pollution change by HDI group
+   =========================================================== */
+
+WITH PollutionChange AS (
+    SELECT 
+        ac.Country,
+        h.HDI_Group,
+        MAX(CASE WHEN ac.Year = '2019' THEN ac.Pollution END) AS Pollution2019,
+        MAX(CASE WHEN ac.Year = '2020' THEN ac.Pollution END) AS Pollution2020
+    FROM AirPollution_clean ac
+    JOIN HDI_clean h 
+        ON TRIM(ac.Country) = TRIM(h.Country)
+       AND h.Year = '2019'
+    WHERE ac.Year IN ('2019','2020')
+    GROUP BY ac.Country, h.HDI_Group
+)
+SELECT 
+    HDI_Group,
+    AVG(Pollution2019) AS Avg_Pollution2019,
+    AVG(Pollution2020) AS Avg_Pollution2020,
+    AVG(Pollution2020 - Pollution2019) AS Avg_Change
+FROM PollutionChange
+GROUP BY HDI_Group
+ORDER BY Avg_Change ASC;
